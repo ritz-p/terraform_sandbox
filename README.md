@@ -1,42 +1,33 @@
-# Terraform plan reference sandbox
+# Terraform sandbox
 
-Minimal reproduction of how a resource reference appears as `(known after apply)` in a human-readable plan.
+A workspace for experimenting with Terraform configurations and checking provider behavior. Terraform runs in Docker, and [kumo](https://github.com/sivchari/kumo) emulates supported AWS APIs locally.
 
 ## Requirements
 
 - Docker Engine and Docker Compose v2
-- Network access to pull container images and install the AWS provider
+- Network access to pull container images and install providers
 
-Terraform runs inside the pinned `hashicorp/terraform:1.16.4` image. The AWS provider is pinned to `6.66.0`.
+Terraform is pinned to 1.16.4 and the AWS provider to 6.66.0. The local AWS emulator is kumo v0.28.1. Terraform uses dummy credentials and points EC2 requests at kumo; it does not use a real AWS account.
+
+## Run the example
 
 ```sh
+docker compose up -d kumo
 docker compose run --rm terraform init
 docker compose run --rm terraform version
 docker compose run --rm terraform plan
+docker compose run --rm terraform apply
 ```
 
-In the plan, `aws_security_group.example.vpc_id` appears as `(known after apply)` although `main.tf` sets it to `aws_vpc.example.id`. The initial plan uses dummy credentials and does not require LocalStack or contact AWS. To save the plan for an issue reproduction:
+The current example creates a VPC and a security group. The security group's `vpc_id` is configured as `aws_vpc.example.id`, but an initial human-readable plan shows `(known after apply)`. This makes the configuration useful for examining how Terraform displays unknown resource references.
+
+To save the exact plan for review:
 
 ```sh
 docker compose run --rm terraform plan -out=plan.tfplan
 docker compose run --rm terraform show plan.tfplan
 ```
 
-Do not commit plan files or state files; they may contain sensitive values and are ignored by Git. After `init`, commit `.terraform.lock.hcl` if using this sandbox for ongoing work.
+Run `docker compose run --rm terraform destroy` before `docker compose down` to remove the example resources. kumo's state persists in the `kumo-data` Docker volume across restarts. Removing that volume while keeping Terraform's state can cause them to diverge.
 
-## Optional local apply
-
-LocalStack is optional for the initial plan. Current LocalStack images require an Auth Token. Supply your own token through the shell, then start LocalStack:
-
-```sh
-export LOCALSTACK_AUTH_TOKEN='your-token'
-docker compose --profile localstack up -d localstack
-docker compose run --rm terraform apply
-```
-
-Terraform's EC2 endpoint points at `http://localstack:4566`. The configuration is intended for local use only. Clean up before stopping the emulator:
-
-```sh
-docker compose run --rm terraform destroy
-docker compose --profile localstack down
-```
+Plan and state files can contain sensitive data and are ignored by Git. After `init`, commit `.terraform.lock.hcl` when continuing to develop this repository. As new experiments are added, configure each AWS service endpoint to point at `http://kumo:4566`.
