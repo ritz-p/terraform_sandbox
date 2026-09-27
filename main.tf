@@ -7,7 +7,7 @@ provider "aws" {
   skip_requesting_account_id  = true
 
   endpoints {
-    ec2 = "http://localstack:4566"
+    ec2 = "http://kumo:4566"
   }
 }
 
