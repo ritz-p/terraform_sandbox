@@ -1,0 +1,24 @@
+services:
+  terraform:
+    image: hashicorp/terraform:1.16.4
+    working_dir: /work
+    volumes:
+      - .:/work
+    environment:
+      TF_IN_AUTOMATION: "true"
+    networks:
+      - sandbox
+
+  localstack:
+    image: localstack/localstack:2026.08.0
+    profiles: [localstack]
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+      SERVICES: ec2
+    ports:
+      - "127.0.0.1:4566:4566"
+    networks:
+      - sandbox
+
+networks:
+  sandbox:
