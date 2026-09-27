@@ -10,7 +10,7 @@ services:
       - sandbox
 
   kumo:
-    image: ghcr.io/sivchari/kumo:v0.28.1
+    image: ghcr.io/sivchari/kumo:0.28.1
     environment:
       KUMO_DATA_DIR: /data
     volumes:
